@@ -250,8 +250,9 @@ class Parser(object):
         if (rowString):
             self.latestRecordNum += 1 #update the record counter
             rec = self.splitRow(rowString)
-            rec = rec[:len(self.columnNames)] #if there are more data records than column names,
-            #trim any surplus records via a slice
+            # if there are more values than columns, it's likely an unescaped separator
+            if len(rec) > len(self.columnNames):
+                return None
 
             #replace empty strings with NULL
             for i in range(len(rec)):

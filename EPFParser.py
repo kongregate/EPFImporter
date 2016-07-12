@@ -252,7 +252,8 @@ class Parser(object):
             rec = self.splitRow(rowString)
             # if there are more values than columns, it's likely an unescaped separator
             if len(rec) > len(self.columnNames):
-                return None
+                LOGGER.error("Skipping row %d", self.latestRecordNum)
+                return []
 
             #replace empty strings with NULL
             for i in range(len(rec)):
@@ -269,7 +270,7 @@ class Parser(object):
                      rec[j] = "%s-01-01" % rec[j]
             return rec
         else:
-            return None
+            raise EOFError
 
 
     def nextRecords(self, maxNum=100):
@@ -278,20 +279,12 @@ class Parser(object):
         """
         records = []
         for j in range(maxNum):
-            lst = self.nextRecord()
-            if (not lst):
+            try:
+                lst = self.nextRecord()
+            except EOFError:
                 break
-            records.append(lst)
+
+            if lst:
+                records.append(lst)
+
         return records
-
-
-    def nextRecordDict(self):
-        """
-        Returns the next row of data as a dictionary, keyed by the column names.
-        """
-        vals = self.nextRecord()
-        if (not vals):
-            return None
-        else:
-            keys = self.columnNames
-            return dict(zip(keys, vals))

@@ -194,25 +194,11 @@ class Ingester(object):
             LOGGER.info("%s incremental ingest of %s (%i records)", s, self.tableName, self.parser.recordsExpected)
             self.startTime = datetime.datetime.now()
 
-            #Different ingest techniques are faster depending on the size of the input.
-            #If there are a large number of records, it's much faster to do a prune-and-merge technique;
-            #for fewer records, it's faster to update the existing table.
             try:
-                if self.parser.recordsExpected < 500000: #update table in place
-                    self._populateTable(self.tableName,
-                                    resumeNum=fromRecord,
-                                    isIncremental=True,
-                                    skipKeyViolators=skipKeyViolators)
-                else: #Import as full, then merge the proper records into a new table
-                    self._createTable(self.incTableName)
-                    LOGGER.info("Populating temporary table...")
-                    self._populateTable(self.incTableName, skipKeyViolators=skipKeyViolators)
-                    LOGGER.info("Creating merged table...")
-                    self._createUnionTable()
-                    self._dropTable(self.incTableName)
-                    LOGGER.info("Applying primary key constraints...")
-                    self._applyPrimaryKeyConstraints(self.unionTableName)
-                    self._renameAndDrop(self.unionTableName, self.tableName)
+                self._populateTable(self.tableName,
+                                resumeNum=fromRecord,
+                                isIncremental=True,
+                                skipKeyViolators=skipKeyViolators)
 
             except MySQLdb.Error, e:
                 LOGGER.error("MySQL error %d: %s", e.args[0], e.args[1])
